@@ -245,7 +245,7 @@ int U2Fob_init(struct U2Fob* device) {
 
     if (response.cid != challenge.cid) continue;
     if (response.init.cmd != challenge.init.cmd) continue;
-//////////////###MOD    if (MSG_LEN(response) != sizeof(U2FHID_INIT_RESP)) continue;
+    if (MSG_LEN(response) != sizeof(U2FHID_INIT_RESP)) continue;
     if (memcmp(response.init.data, challenge.init.data, INIT_NONCE_SIZE))
         continue;
 

@@ -238,12 +238,14 @@ int U2Fob_init(struct U2Fob* device) {
     U2FHID_FRAME response;
     res = U2Fob_receiveHidFrame(device, &response, 2.0);
 
-    if (res == -ERR_MSG_TIMEOUT) return res;
-    if (res == -ERR_OTHER) return res;
+    if (res == -ERR_MSG_TIMEOUT) 
+		return res;
+    if (res == -ERR_OTHER) 
+		return res;
 
     if (response.cid != challenge.cid) continue;
     if (response.init.cmd != challenge.init.cmd) continue;
-    if (MSG_LEN(response) != sizeof(U2FHID_INIT_RESP)) continue;
+//////////////###MOD    if (MSG_LEN(response) != sizeof(U2FHID_INIT_RESP)) continue;
     if (memcmp(response.init.data, challenge.init.data, INIT_NONCE_SIZE))
         continue;
 
@@ -343,7 +345,11 @@ int U2Fob_recv(struct U2Fob* device, uint8_t* cmd,
 
   return result;
 }
-
+float g_RXTimeout = 5.0;
+void U2FSetTimeout(float t)
+{
+	g_RXTimeout = t;
+}
 int U2Fob_apdu(struct U2Fob* device,
                uint8_t CLA, uint8_t INS, uint8_t P1, uint8_t P2,
                const std::string& out,
@@ -366,17 +372,21 @@ int U2Fob_apdu(struct U2Fob* device,
   buf[7 + out.size() + 1] = 0;
 
   int res = U2Fob_send(device, cmd, buf, bufSize);
-  if (res != 0) return res;
+  if (res != 0) 
+	  return res;
 
   memset(buf, 0xEE, sizeof(buf));
-  res = U2Fob_recv(device, &cmd, buf, sizeof(buf), 5.0);
-  if (res < 0) return res;
+  res = U2Fob_recv(device, &cmd, buf, sizeof(buf), g_RXTimeout);
+  if (res < 0) 
+	  return res;
 
-  if (cmd != U2FHID_MSG) return -ERR_OTHER;
+  if (cmd != U2FHID_MSG) 
+	  return -ERR_OTHER;
 
   uint16_t sw12;
 
-  if (res < 2) return -ERR_OTHER;
+  if (res < 2) 
+	  return -ERR_OTHER;
   sw12 = (buf[res - 2] << 8) | buf[res - 1];
   res -= 2;
 

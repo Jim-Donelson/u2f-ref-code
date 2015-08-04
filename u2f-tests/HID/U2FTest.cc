@@ -178,15 +178,12 @@ void test_Enroll(int expectedSW12 = 0x9000) {
   // bins all such fobs into a single large batch, which helps privacy.
   string selfSigned = a2b(
       "3081B3A003020102020101300A06082A8648CE3D040302300E310C300A060355040A0C035532463022180F32303030303130313030303030305A180F32303939313233313233353935395A300E310C300A060355040313035532463059301306072A8648CE3D020106082A8648CE3D030107034200") + pk;
-
   SHA256_init(&sha);
   SHA256_update(&sha, selfSigned.data(), selfSigned.size());
   p256_from_bin(SHA256_final(&sha), &h);
-
   string certSig;
   CHECK_EQ(getCertSignature(cert, &certSig), true);
   INFO << "certSig : " << b2a(certSig);
-
   CHECK_EQ(1, dsa_sig_unpack((uint8_t*) (certSig.data()), certSig.size(),
                              &sig_r, &sig_s));
   // Verify cert signature.
@@ -269,14 +266,16 @@ void check_Compilation() {
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     cerr << "Usage: " << argv[0]
-         << " <device-path> [-a] [-v] [-V] [-p] [-b]" << endl;
-    return -1;
+         << " <device-path> [-a] [-v] [-V] [-p] [-b] [-t] [-w]" << endl;
+    return -1; 
   }
 
   device = U2Fob_create();
 
   char* arg_DeviceName = argv[1];
   bool arg_hasButton = true;  // fob has button
+  bool arg_waitForTUP = true;
+
 
   while (--argc > 1) {
     if (!strncmp(argv[argc], "-v", 2)) {
@@ -300,6 +299,14 @@ int main(int argc, char* argv[]) {
       // Fob does not have button
       arg_hasButton = false;
     }
+	if (!strncmp(argv[argc], "-t", 2)) {
+      // Fob needs longer time out for biometric operation.
+       U2FSetTimeout(20.0);
+    }
+	if (!strncmp(argv[argc], "-w", 2)) {
+      // Do not wait.
+       arg_waitForTUP = false;
+    }
   }
 
   srand((unsigned int) time(NULL));
@@ -317,8 +324,7 @@ int main(int argc, char* argv[]) {
 
   // Fob with button should need touch.
   if (arg_hasButton) PASS(test_Enroll(0x6985));
-
-  WaitForUserPresence(device, arg_hasButton);
+  if( arg_waitForTUP ) WaitForUserPresence(device, arg_hasButton);
 
   PASS(test_Enroll(0x9000));
 
@@ -338,7 +344,7 @@ int main(int argc, char* argv[]) {
   PASS(test_Sign(0x6a80));
   regReq.appId[0] ^= 0xaa;
 
-  WaitForUserPresence(device, arg_hasButton);
+  if( arg_waitForTUP )  WaitForUserPresence(device, arg_hasButton);
 
   // Sign with check only should not produce signature.
   PASS(test_Sign(0x6985, true));
@@ -347,7 +353,7 @@ int main(int argc, char* argv[]) {
   PASS(ctr1 = test_Sign(0x9000));
   PASS(test_Sign(0x6985));
 
-  WaitForUserPresence(device, arg_hasButton);
+  if( arg_waitForTUP )  WaitForUserPresence(device, arg_hasButton);
 
   uint32_t ctr2;
   PASS(ctr2 = test_Sign(0x9000));

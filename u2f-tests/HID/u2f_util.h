@@ -108,7 +108,7 @@ int U2Fob_send(struct U2Fob* device, uint8_t cmd,
 int U2Fob_recv(struct U2Fob* device, uint8_t* cmd,
                void* data, size_t size,
                float timeoutSeconds);
-
+void U2FSetTimeout(float t);
 // returns
 //   negative error
 //   positive sw12, e.g. 0x9000, 0x6985 etc.
